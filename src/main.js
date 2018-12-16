@@ -93,7 +93,7 @@ function repeatNotesPass(sourceRow) {
 
 function addRows(minLength, original) {
     const newRow = repeatNotesPass(getRandomRow(matrix));
-    const combined = original.concat(newNotes)
+    const combined = original.concat(newRow)
 
     if (combined.length < minLength)
         return addRows(minLength, combined);
@@ -107,7 +107,7 @@ function compose(minLength) {
     const rhythmicPatterns = [[2, 2, 2, 4], [4, 1]];
     const matrix = generateMatrix();
 
-    addRows(minLength, getReihe(matrix));
+    return addRows(minLength, getReihe(matrix));
 }
 
 
@@ -130,7 +130,7 @@ function toneRowToStave(system, row) {
         notes[i] = note
     }
 
-    let voice = vf.Voice({time: "12/4"}).addTickables(notes);
+    let voice = vf.Voice({ time: {num_beats: row.length,  beat_value: 4}}).addTickables(notes);
 
     system.addStave({
         voices: [
@@ -141,10 +141,8 @@ function toneRowToStave(system, row) {
 
 let matrix = generateMatrix();
 
-let system = vf.System();
+let system = vf.System({width: 800});
 
-toneRowToStave(system, getReihe(matrix));
-toneRowToStave(system, getUmkehrung(matrix));
-toneRowToStave(system, getReihe(matrix, 1));
+toneRowToStave(system, compose(36));
 
 vf.draw();
