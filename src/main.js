@@ -90,7 +90,7 @@ function fillRowToLength(minLength, matrix, currentRow) {
     const combined = currentRow.concat(newRow)
 
     if (combined.length < minLength)
-        return fillRowToLength(minLength, combined);
+        return fillRowToLength(minLength, matrix, combined);
     else
         return combined;
 }
@@ -121,4 +121,4 @@ function melodyToAbc(melody) {
 }
 
 console.debug("Reset")
-ABCJS.renderAbc('sheet_container', melodyToAbc(compose(24)));
+ABCJS.renderAbc('sheet_container', melodyToAbc(compose(64)));
