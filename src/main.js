@@ -1,9 +1,5 @@
 const noteMap = ["c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"];
 
-vf = new Vex.Flow.Factory({
-    renderer: { elementId: "sheet_container", width: 1000, height: 1000}
-})
-
 function shuffle(a) {
     let j, x, i;
     for (i = a.length - 1; i > 0; i--) {
@@ -111,38 +107,15 @@ function compose(minLength) {
 }
 
 
-function toneRowToStave(system, row) {
+function melodyToAbc() {
     let notes = [];
     for (let i = 0; i < row.length; i++) {
         // read key from row integer
-        let key = Vex.Flow.integerToNote(row[i]);
-        let note = vf.StaveNote({
-            keys: [key + "/4"],
-            duration: "4"
-        });
-
-        // add accidentals
-        let accidental = note.keyProps[0].accidental
-        
-        if (accidental)
-            note.addAccidental(0, vf.Accidental({ type: accidental }));
-
-        notes[i] = note
     }
-
-    let voice = vf.Voice({ time: {num_beats: row.length,  beat_value: 4}}).addTickables(notes);
-
-    system.addStave({
-        voices: [
-            voice
-        ]
-    }).addClef("treble").addTimeSignature("4/4")
 }
 
 let matrix = generateMatrix();
 
-let system = vf.System({width: 800});
+const testABC = `(C1C1C3)(C4|C5C6C7)`
 
-toneRowToStave(system, compose(36));
-
-vf.draw();
+ABCJS.renderAbc('sheet_container', testABC);
