@@ -13,6 +13,10 @@ function chance(p) {
     return Math.random() < p;
 }
 
+function choose(list) {
+    return list[Math.floor(Math.random() * list.length)];
+}
+
 // melody calculation
 function generateMatrix() {
     function clamp12(x) {
@@ -86,39 +90,58 @@ function repeatNotesPass(sourceRow) {
 }
 
 function fillRowToLength(minLength, matrix, currentRow) {
-    const newRow = repeatNotesPass(getRandomRow(matrix));
-    const combined = currentRow.concat(newRow)
+    if (currentRow.length < minLength) {
+        const newRow = repeatNotesPass(getRandomRow(matrix));
+        const combined = currentRow.concat(newRow)
 
-    if (combined.length < minLength)
         return fillRowToLength(minLength, matrix, combined);
-    else
-        return combined;
+    }
+    else {
+        return currentRow;
+    }
 }
 
 const rhythmicUnit = 16;
+
+function keysToNotes(keys, rhythmPatterns) {
+    function nextNote(currentNotes, i, pattern, patternIndex) {
+        if (!pattern || patternIndex >= pattern.length)
+            return nextNote(currentNotes, i, choose(rhythmPatterns), 0);
+
+        if (i >= keys.length)
+            return currentNotes
+
+        const note = {
+            key: keys[i],
+            duration: pattern[patternIndex]
+        }
+
+        const newNotes = currentNotes.concat(note);
+
+        return nextNote(newNotes, i + 1, pattern, patternIndex + 1);
+    }
+
+    return nextNote([], 0);
+}
 
 function compose(minLength) {
     const rhythmicPatterns = [[2, 2, 2, 4], [4, 1]];
     const matrix = generateMatrix();
 
-    return fillRowToLength(minLength, matrix, getReihe(matrix));
+    const melody = fillRowToLength(minLength, matrix, getReihe(matrix));
+    return keysToNotes(melody, rhythmicPatterns);
 }
 
 function noteToABC(note) {
     const noteMap = ["c", "^c", "d", "^d", "e", "f", "^f", "g", "^g", "a", "^a", "b"];
-    return noteMap[note];
+    return noteMap[note.key] + note.duration;
 }
 
-function melodyToAbc(melody) {
-    function stringBuilder(str, note) {
-        const newStr = str + " " + noteToABC(note);
-        return newStr;
-    }
-
-    const str = melody.reduce(stringBuilder, "");
+function notesToAbc(notes) {
+    const str = notes.map(note => noteToABC(note)).join(" ");
     console.log(str);
     return str;
 }
 
 console.debug("Reset")
-ABCJS.renderAbc('sheet_container', melodyToAbc(compose(64)));
+ABCJS.renderAbc('sheet_container', notesToAbc(compose(5)));
