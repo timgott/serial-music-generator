@@ -144,4 +144,7 @@ function notesToAbc(notes) {
 }
 
 console.debug("Reset")
-ABCJS.renderAbc('sheet_container', notesToAbc(compose(5)));
+
+let abc = notesToAbc(compose(5))
+ABCJS.renderAbc('sheet_container', abc);
+ABCJS.renderMidi("midi_player", abc, { generateDownload: true, generateInline: true });
