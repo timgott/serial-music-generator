@@ -132,13 +132,46 @@ function compose(minLength) {
     return keysToNotes(melody, rhythmicPatterns);
 }
 
+function noteStringToOctave(noteString, octave) {
+    if (octave > 0)
+        return noteString.toLowerCase() + "'".repeat(octave - 1);
+    else
+        return noteString.toUpperCase() + ",".repeat(-octave);
+}
+
+function getNoteName(key) {
+    const noteNames = ["c", "c", "d", "d", "e", "f", "f", "g", "g", "a", "a", "b"];
+    return noteNames[key];
+}
+
+function getNoteAccidental(key) {
+    const accidentals = ["=", "^", "=", "^", "=", "=", "^", "=", "^", "=", "^", "="];
+    return accidentals[key]
+}
+
 function noteToABC(note) {
-    const noteMap = ["c", "^c", "d", "^d", "e", "f", "^f", "g", "^g", "a", "^a", "b"];
-    return noteMap[note.key] + note.duration;
+    const noteName = getNoteName(note.key)
+    const accidental = note.hideAccidental ? "" : getNoteAccidental(note.key);
+
+    return accidental + noteStringToOctave(noteName, 0) + note.duration;
+}
+
+function hideUnnecessaryAccidentals(notes) {
+    return notes.reduce(function (notesAccumulator, note) {
+        const noteName = getNoteName(note.key)
+        const accidental = getNoteAccidental(note.key)
+        const lastNote = notesAccumulator.slice().reverse().find(other => getNoteName(other.key) == noteName)
+        const lastAccidental = lastNote ? getNoteAccidental(lastNote.key) : "="
+
+        if (accidental === lastAccidental)
+            return [...notesAccumulator, {...note, hideAccidental: true}]
+        else
+            return [...notesAccumulator, note]
+    }, [])
 }
 
 function notesToAbc(notes) {
-    const str = notes.map(note => noteToABC(note)).join(" ");
+    const str = hideUnnecessaryAccidentals(notes).map(note => noteToABC(note)).join(" ");
     console.log(str);
     return str;
 }
