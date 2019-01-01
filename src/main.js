@@ -105,31 +105,58 @@ const rhythmicUnit = 16;
 
 function keysToNotes(keys, rhythmPatterns) {
     function nextNote(currentNotes, i, pattern, patternIndex) {
+        // pattern finished?
         if (!pattern || patternIndex >= pattern.length)
             return nextNote(currentNotes, i, choose(rhythmPatterns), 0);
 
+        // end of notes reached?
         if (i >= keys.length)
             return currentNotes
 
+        const duration = pattern[patternIndex]
+        
+        // is rest?
+        if (duration < 0) {
+            const rest = {
+                isRest: true,
+                duration: -duration
+            }
+
+            const newNotes = currentNotes.concat(rest);
+            return nextNote(newNotes, i, pattern, patternIndex + 1); // doesn't advance in melody
+        }
+        
+        // regular note
         const note = {
             key: keys[i],
-            duration: pattern[patternIndex]
+            duration: duration
         }
 
         const newNotes = currentNotes.concat(note);
-
-        return nextNote(newNotes, i + 1, pattern, patternIndex + 1);
+        return nextNote(newNotes, i + 1, pattern, patternIndex + 1); // advances in melody and rhythm
     }
 
     return nextNote([], 0);
 }
 
 function compose(minLength) {
-    const rhythmicPatterns = [[2, 2, 2, 4], [4, 1]];
+    const testPatterns = [[2, 2, 2, 4], [4, 1]];
+    const schoenbergOp33aPatterns = [
+        [4, 4, 4, 4, 4, 8, -2],
+        [2, 2, 2, 10],
+        [2, 2, 8, 10, -4],
+        [-2, 2, 2, 7],
+        [4, 2, 6, 2, -2],
+        [2, 2, 2, -2, 6, 8],
+        [5, 1, 2, 2, 2, 2],
+        [2, 1, 2, 1, 2, -2, 1, 2, 1, 2],
+        [-1, 1, 2, 3, 1, 3],
+        [-5, 1, 1]
+    ]
     const matrix = generateMatrix();
 
     const melody = fillRowToLength(minLength, matrix, getReihe(matrix));
-    return keysToNotes(melody, rhythmicPatterns);
+    return keysToNotes(melody, schoenbergOp33aPatterns);
 }
 
 function noteStringToOctave(noteString, octave) {
@@ -150,23 +177,31 @@ function getNoteAccidental(key) {
 }
 
 function noteToABC(note) {
-    const noteName = getNoteName(note.key)
-    const accidental = note.hideAccidental ? "" : getNoteAccidental(note.key);
+    if (note.isRest) {
+        return "z" + note.duration
+    }
+    else {
+        const noteName = getNoteName(note.key)
+        const accidental = note.hideAccidental ? "" : getNoteAccidental(note.key);
 
-    return accidental + noteStringToOctave(noteName, 0) + note.duration;
+        return accidental + noteStringToOctave(noteName, 0) + note.duration;
+    }
 }
 
 function hideUnnecessaryAccidentals(notes) {
     return notes.reduce(function (notesAccumulator, note) {
+        if (note.isRest)
+            return [...notesAccumulator, note];
+
         const noteName = getNoteName(note.key)
         const accidental = getNoteAccidental(note.key)
         const lastNote = notesAccumulator.slice().reverse().find(other => getNoteName(other.key) == noteName)
         const lastAccidental = lastNote ? getNoteAccidental(lastNote.key) : "="
 
         if (accidental === lastAccidental)
-            return [...notesAccumulator, {...note, hideAccidental: true}]
+            return [...notesAccumulator, { ...note, hideAccidental: true }];
         else
-            return [...notesAccumulator, note]
+            return [...notesAccumulator, note];
     }, [])
 }
 
@@ -178,6 +213,7 @@ function notesToAbc(notes) {
 
 console.debug("Reset")
 
-let abc = notesToAbc(compose(5))
+const abc_header = "L:1/8\n"
+const abc = abc_header+notesToAbc(compose(20))
 ABCJS.renderAbc('sheet_container', abc);
 ABCJS.renderMidi("midi_player", abc, { generateDownload: true, generateInline: true });
