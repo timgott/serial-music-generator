@@ -129,7 +129,8 @@ function keysToNotes(keys, rhythmPatterns) {
         // regular note
         const note = {
             key: keys[i],
-            duration: duration
+            duration: duration,
+            octave: 0
         }
 
         const newNotes = currentNotes.concat(note);
@@ -139,24 +140,18 @@ function keysToNotes(keys, rhythmPatterns) {
     return nextNote([], 0);
 }
 
-function compose(minLength) {
-    const testPatterns = [[2, 2, 2, 4], [4, 1]];
-    const schoenbergOp33aPatterns = [
-        [4, 4, 4, 4, 4, 8, -2],
-        [2, 2, 2, 10],
-        [2, 2, 8, 10, -4],
-        [-2, 2, 2, 7],
-        [4, 2, 6, 2, -2],
-        [2, 2, 2, -2, 6, 8],
-        [5, 1, 2, 2, 2, 2],
-        [2, 1, 2, 1, 2, -2, 1, 2, 1, 2],
-        [-1, 1, 2, 3, 1, 3],
-        [-5, 1, 1]
-    ]
-    const matrix = generateMatrix();
+function shiftOctaves(notes, octaves) {
+    return notes.map(function (note) { return { ...note, octave: note.octave + octaves } });
+}
 
-    const melody = fillRowToLength(minLength, matrix, getReihe(matrix));
-    return keysToNotes(melody, schoenbergOp33aPatterns);
+function compose(matrix, patternsPerVoice, minLength) {
+    const voices = patternsPerVoice.map(function (patterns, i) {
+        const startRow = i == 0 ? getReihe(matrix) : [];
+        const melodyKeys = fillRowToLength(minLength, matrix, startRow);
+        return shiftOctaves(keysToNotes(melodyKeys, patterns), -i);
+    })
+    
+    return voices;
 }
 
 function noteStringToOctave(noteString, octave) {
@@ -184,7 +179,7 @@ function noteToABC(note) {
         const noteName = getNoteName(note.key)
         const accidental = note.hideAccidental ? "" : getNoteAccidental(note.key);
 
-        return accidental + noteStringToOctave(noteName, 0) + note.duration;
+        return accidental + noteStringToOctave(noteName, note.octave) + note.duration;
     }
 }
 
@@ -207,13 +202,47 @@ function hideUnnecessaryAccidentals(notes) {
 
 function notesToAbc(notes) {
     const str = hideUnnecessaryAccidentals(notes).map(note => noteToABC(note)).join(" ");
-    console.log(str);
     return str;
 }
 
 console.debug("Reset")
 
-const abc_header = "L:1/8\n"
-const abc = abc_header+notesToAbc(compose(20))
+const static_rhythm = [[1]];
+const random_rhythm = [[1],[2],[3],[4],[6],[8],[-1],[-2],[-3],[-4],[-6],[-8]];
+const testPatterns = [[2, 2, 2, 4], [4, 1]];
+const schoenbergOp33aPatterns = [
+    [4, 4, 4, 4, 4, 8, -2],
+    [2, 2, 2, 10],
+    [2, 2, 8, 10, -4],
+    [-2, 2, 2, 7],
+    [4, 2, 6, 2, -2],
+    [2, 2, 2, -2, 6, 8],
+    [5, 1, 2, 2, 2, 2],
+    [2, 1, 2, 1, 2, -2, 1, 2, 1, 2],
+    [-1, 1, 2, 3, 1, 3],
+    [-5, 1, 1]
+];
+const waveRhythm = [
+    [1,2,3,4,5,6,7,8,9,8,7,6,5,4,3,2]
+]
+
+const matrix = generateMatrix();
+
+// render row
+const row_header = "L:1/4\n";
+const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
+ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes));
+
+// render song
+const voices = compose(matrix, [random_rhythm, random_rhythm], 50);
+const abc =
+`L:1/8
+V:1 clef=treble
+${notesToAbc(voices[0])}
+V:2 clef=bass
+${notesToAbc(voices[1])}`
+
+console.log(abc);
+
 ABCJS.renderAbc('sheet_container', abc);
 ABCJS.renderMidi("midi_player", abc, { generateDownload: true, generateInline: true });
