@@ -148,7 +148,7 @@ function compose(matrix, patternsPerVoice, minLength) {
     const voices = patternsPerVoice.map(function (patterns, i) {
         const startRow = i == 0 ? getReihe(matrix) : [];
         const melodyKeys = fillRowToLength(minLength, matrix, startRow);
-        return shiftOctaves(keysToNotes(melodyKeys, patterns), -i);
+        return shiftOctaves(keysToNotes(melodyKeys, patterns), -i*2);
     })
     
     return voices;
@@ -208,6 +208,7 @@ function notesToAbc(notes) {
 console.debug("Reset")
 
 const static_rhythm = [[1]];
+const static_rhythm_slow = [[4],[8],[2,2],[-4],[-8]];
 const random_rhythm = [[1],[2],[3],[4],[6],[8],[-1],[-2],[-3],[-4],[-6],[-8]];
 const testPatterns = [[2, 2, 2, 4], [4, 1]];
 const schoenbergOp33aPatterns = [
@@ -223,9 +224,18 @@ const schoenbergOp33aPatterns = [
     [-5, 1, 1]
 ];
 const waveRhythm = [
-    [1,2,3,4,5,6,7,8,9,8,7,6,5,4,3,2]
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3, 2]
+];
+const waveRhythm2 = [
+    [1,2,3,4,5,4,3,2]
 ]
 
+
+// load constants
+const song_length = document.getElementById('input_length').value
+
+
+// generate matrix
 const matrix = generateMatrix();
 
 // render row
@@ -234,9 +244,11 @@ const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
 ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes));
 
 // render song
-const voices = compose(matrix, [random_rhythm, random_rhythm], 50);
+const voices = compose(matrix, [schoenbergOp33aPatterns, static_rhythm_slow], song_length);
 const abc =
-`L:1/8
+`X:1
+L:1/8
+Q:120
 V:1 clef=treble
 ${notesToAbc(voices[0])}
 V:2 clef=bass
@@ -246,6 +258,9 @@ console.log(abc);
 
 ABCJS.renderAbc('sheet_container', abc, {scrollHorizontal: false, viewportHorizontal: false});
 ABCJS.renderMidi("midi_player", abc, { generateDownload: true, generateInline: true });
+
+// print abc output
+document.getElementById("abc_output").textContent = abc;
 
 // hack to get scrolling working correctly
 document.getElementById("row_container").setAttribute("style", "overflow: auto");
