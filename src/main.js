@@ -244,5 +244,9 @@ ${notesToAbc(voices[1])}`
 
 console.log(abc);
 
-ABCJS.renderAbc('sheet_container', abc);
+ABCJS.renderAbc('sheet_container', abc, {scrollHorizontal: false, viewportHorizontal: false});
 ABCJS.renderMidi("midi_player", abc, { generateDownload: true, generateInline: true });
+
+// hack to get scrolling working correctly
+document.getElementById("row_container").setAttribute("style", "overflow: auto");
+document.getElementById("sheet_container").setAttribute("style", "overflow: auto");
