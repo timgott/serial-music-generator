@@ -233,6 +233,7 @@ const waveRhythm2 = [
 
 // load constants
 const song_length = document.getElementById('input_length').value
+const tempo = document.getElementById('input_tempo').value
 
 
 // generate matrix
@@ -248,7 +249,7 @@ const voices = compose(matrix, [schoenbergOp33aPatterns, static_rhythm_slow], so
 const abc =
 `X:1
 L:1/8
-Q:120
+Q:${tempo}
 V:1 clef=treble
 ${notesToAbc(voices[0])}
 V:2 clef=bass
