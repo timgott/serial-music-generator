@@ -101,40 +101,43 @@ function fillRowToLength(minLength, matrix, currentRow) {
     }
 }
 
-const rhythmicUnit = 16;
-
 function keysToNotes(keys, rhythmPatterns) {
-    function nextNote(currentNotes, i, pattern, patternIndex) {
+    function nextNote(currentNotes, noteIndex, pattern, patternIndex) {
         // pattern finished?
         if (!pattern || patternIndex >= pattern.length)
-            return nextNote(currentNotes, i, choose(rhythmPatterns), 0);
+            return nextNote(currentNotes, noteIndex, choose(rhythmPatterns), 0);
 
         // end of notes reached?
-        if (i >= keys.length)
+        if (noteIndex >= keys.length)
             return currentNotes
 
-        const duration = pattern[patternIndex]
+        const duration = pattern[patternIndex]; // can be negative for rests
         
+        const lastNote = currentNotes[currentNotes.length-1];
+        const tick = lastNote ? lastNote.tick + lastNote.duration : 0;
+
         // is rest?
         if (duration < 0) {
             const rest = {
                 isRest: true,
-                duration: -duration
-            }
+                duration: -duration,
+                tick: tick
+            };
 
             const newNotes = currentNotes.concat(rest);
-            return nextNote(newNotes, i, pattern, patternIndex + 1); // doesn't advance in melody
+            return nextNote(newNotes, noteIndex, pattern, patternIndex + 1); // doesn't advance in melody
         }
         
         // regular note
         const note = {
-            key: keys[i],
+            key: keys[noteIndex],
             duration: duration,
-            octave: 0
-        }
+            octave: 0,
+            tick: tick
+        };
 
         const newNotes = currentNotes.concat(note);
-        return nextNote(newNotes, i + 1, pattern, patternIndex + 1); // advances in melody and rhythm
+        return nextNote(newNotes, noteIndex + 1, pattern, patternIndex + 1); // advances in melody and rhythm
     }
 
     return nextNote([], 0);
@@ -171,6 +174,26 @@ function getNoteAccidental(key) {
     return accidentals[key]
 }
 
+function hideRepeatedAccidentals(notes, barLength) {
+    return notes.reduce(function (notesAccumulator, note) {
+        if (note.isRest)
+            return [...notesAccumulator, note];
+
+        const noteName = getNoteName(note.key)
+        const accidental = getNoteAccidental(note.key)
+        const barNumber = Math.floor(note.tick/barLength);
+        const lastNote = notesAccumulator.slice().reverse().find(other => Math.floor(other.tick / barLength) == barNumber && getNoteName(other.key) == noteName);
+        const lastAccidental = lastNote ? getNoteAccidental(lastNote.key) : "="
+
+        if (accidental === lastAccidental)
+            return [...notesAccumulator, { ...note, hideAccidental: true }];
+        else
+            return [...notesAccumulator, note];
+    }, [])
+}
+
+
+/* ABC output formatting */
 function noteToABC(note) {
     if (note.isRest) {
         return "z" + note.duration
@@ -183,32 +206,45 @@ function noteToABC(note) {
     }
 }
 
-function hideUnnecessaryAccidentals(notes) {
-    return notes.reduce(function (notesAccumulator, note) {
-        if (note.isRest)
-            return [...notesAccumulator, note];
+function multiBarNoteToABC(note, barLength) {
+    function splitNoteToBarsRec(tick, remainingDuration, splitNotesArray) {            
+        const maxDuration = barLength - (tick % barLength);
 
-        const noteName = getNoteName(note.key)
-        const accidental = getNoteAccidental(note.key)
-        const lastNote = notesAccumulator.slice().reverse().find(other => getNoteName(other.key) == noteName)
-        const lastAccidental = lastNote ? getNoteAccidental(lastNote.key) : "="
+        const newNote = { ...note, tick: tick, duration: Math.min(maxDuration, remainingDuration) };
+        const newArray = [...splitNotesArray, { ...newNote }];
 
-        if (accidental === lastAccidental)
-            return [...notesAccumulator, { ...note, hideAccidental: true }];
-        else
-            return [...notesAccumulator, note];
-    }, [])
+        if (remainingDuration > maxDuration) {
+            return splitNoteToBarsRec(tick + maxDuration, remainingDuration - maxDuration, newArray);
+        }
+        
+        return newArray;
+    }
+
+    const notes = splitNoteToBarsRec(note.tick, note.duration, []);
+    const barEnd = ((note.tick + note.duration) % barLength) == 0 ? "|":"";
+    const noteString = notes.map(noteToABC).join("|")
+
+    if (notes.length > 1 && !note.isRest) {
+        return "(" + noteString + ")" + barEnd;
+    }
+
+    return noteString + barEnd;
 }
 
-function notesToAbc(notes) {
-    const str = hideUnnecessaryAccidentals(notes).map(note => noteToABC(note)).join(" ");
+function notesToAbc(notes, barLength) {
+    const str = hideRepeatedAccidentals(notes, barLength).map(note => multiBarNoteToABC(note, barLength)).join(" ");
     return str;
 }
 
+
+/* Main program */
 console.debug("Reset")
 
+// rhythms
 const static_rhythm = [[1]];
-const static_rhythm_slow = [[4],[8],[2,2],[-4],[-8]];
+const rhythm2 = [[-1,2]];
+const static_rhythm_with_pause = [[1], [-1]];
+const slow_rhythm = [[4],[8],[2,2],[-4],[-8]];
 const random_rhythm = [[1],[2],[3],[4],[6],[8],[-1],[-2],[-3],[-4],[-6],[-8]];
 const testPatterns = [[2, 2, 2, 4], [4, 1]];
 const schoenbergOp33aPatterns = [
@@ -234,26 +270,27 @@ const waveRhythm2 = [
 // load constants
 const song_length = document.getElementById('input_length').value
 const tempo = document.getElementById('input_tempo').value
-
+const barLength = 8;
+const rhythmicUnit = 8;
 
 // generate matrix
 const matrix = generateMatrix();
 
 // render row
 const row_header = "L:1/4\n";
-const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
-ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes));
+const base_row_notes = keysToNotes(getReihe(matrix), rhythm2);
+ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes, 5));
 
 // render song
-const voices = compose(matrix, [schoenbergOp33aPatterns, static_rhythm_slow], song_length);
+const voices = compose(matrix, [schoenbergOp33aPatterns, slow_rhythm], song_length);
 const abc =
 `X:1
-L:1/8
+L:1/${rhythmicUnit}
 Q:${tempo}
 V:1 clef=treble
-${notesToAbc(voices[0])}
+${notesToAbc(voices[0], barLength)}
 V:2 clef=bass
-${notesToAbc(voices[1])}`
+${notesToAbc(voices[1], barLength)}`
 
 console.log(abc);
 
