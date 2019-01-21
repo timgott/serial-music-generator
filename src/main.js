@@ -333,7 +333,7 @@ const barLength = document.getElementById("input_barLength").value;
 const rhythmicUnit = document.getElementById("input_rhythmicUnit").value;
 
 // load rhythms
-const textToRhythmArray = (text) => text.split("\n").map((line) => line.split(" ").map(str => parseInt(str)));
+const textToRhythmArray = (text) => text.split("\n").map((line) => line.split(" ").map(str => parseInt(str)).filter((x) => isFinite(x))).filter((pattern) => pattern.length > 0);
 const voice1rhythms = textToRhythmArray(document.getElementById("input_rhythm1").value);
 const voice2rhythms = textToRhythmArray(document.getElementById("input_rhythm2").value);
 
