@@ -1,0 +1,78 @@
+* {
+    box-sizing: border-box;
+}
+
+.controls {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+.abcjs-inline-midi {
+    filter: drop-shadow(0px 0px 10px black);
+    border-radius: 0px;
+}
+
+.config_box {
+    background-image: linear-gradient(45deg, dodgerblue, darkviolet);
+    width: 100%;
+    padding: 10px 0;
+
+    color: white;
+
+    flex-direction: row;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+}
+
+.config_box > div {
+    margin: 0px auto;
+}
+
+.params > div {
+    margin: 10px 0px;
+}
+
+.params input {
+    margin: 0 5px;
+    width: 4.5em;
+    text-align: right;
+}
+
+.params span {
+    float: left;
+    min-width: 9em;
+}
+
+.rhythms {
+    display: flex;
+}
+
+.rhythms > div {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 10px;
+}
+
+@media screen and (max-width: 800px) {
+    .rhythms {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 22em), screen and (max-height: 20em) {
+    .config_box {
+        display: none;
+    }
+}
+
+.input_rhythm {
+    margin: 10px 0px;
+    flex: 1;
+}
+
+body {
+    margin-bottom: 10em;
+}

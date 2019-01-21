@@ -360,7 +360,7 @@ ${notesToAbc(voices[1], barLength)}`
 console.log(abc);
 
 ABCJS.renderAbc('sheet_container', abc, {scrollHorizontal: false, viewportHorizontal: false});
-ABCJS.renderMidi("midi_player", abc, { generateDownload: true, generateInline: true });
+ABCJS.renderMidi("midi_player", abc, { generateInline: true });
 
 // print abc output
 document.getElementById("abc_output").textContent = abc;
