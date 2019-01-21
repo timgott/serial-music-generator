@@ -327,10 +327,15 @@ const waveRhythm2 = [
 
 
 // load constants
-const song_length = document.getElementById('input_length').value
-const tempo = document.getElementById('input_tempo').value
-const barLength = 16;
-const rhythmicUnit = 16;
+const song_length = document.getElementById("input_length").value
+const tempo = document.getElementById("input_tempo").value
+const barLength = document.getElementById("input_barLength").value;
+const rhythmicUnit = document.getElementById("input_rhythmicUnit").value;
+
+// load rhythms
+const textToRhythmArray = (text) => text.split("\n").map((line) => line.split(" ").map(str => parseInt(str)));
+const voice1rhythms = textToRhythmArray(document.getElementById("input_rhythm1").value);
+const voice2rhythms = textToRhythmArray(document.getElementById("input_rhythm2").value);
 
 // generate matrix
 const matrix = generateMatrix();
@@ -342,7 +347,7 @@ ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes, 4));
 
 
 // render song
-const voices = compose(matrix, [schoenbergOp33aPatterns, schoenbergOp33aPatterns], song_length);
+const voices = compose(matrix, [voice1rhythms, voice2rhythms], song_length);
 const abc =
 `X:1
 L:1/${rhythmicUnit}
