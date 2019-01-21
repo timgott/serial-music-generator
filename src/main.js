@@ -192,6 +192,37 @@ function hideRepeatedAccidentals(notes, barLength) {
     }, [])
 }
 
+function beautifyRests(notes, barLength) {
+    const newNotes = notes.reduce(function (acc, note) {
+        if (note.isRest) {
+            return {
+                newNotes: acc.newNotes,
+                currentRestDuration: acc.currentRestDuration + note.duration
+            };
+        }
+        else {
+            const rest = acc.currentRestDuration > 0 ? [{ isRest: true, tick: note.tick - acc.currentRestDuration, duration: acc.currentRestDuration }] : []
+
+            if (acc.currentRestDuration == undefined || isNaN(acc.currentRestDuration))
+                throw "currentRestDuration is wrong";
+
+            return {
+                newNotes: [...acc.newNotes, ...rest, note],
+                currentRestDuration: 0
+            };
+        }
+    }, { newNotes: [], currentRestDuration: 0 }).newNotes;
+
+    const lastNote = newNotes[newNotes.length - 1];
+    const lastTick = lastNote.tick + lastNote.duration;
+    const remainingDuration = barLength - lastTick % barLength;
+
+    if (remainingDuration == 0)
+        return newNotes;
+    else
+        return [...newNotes, { isRest: true, tick: lastTick, duration: remainingDuration }];
+}
+
 
 /* ABC output formatting */
 function noteToABC(note) {
@@ -206,33 +237,61 @@ function noteToABC(note) {
     }
 }
 
+function nextPow2Multiple(x) {
+    if (x == 0)
+        return Infinity;
+
+    function determinePow2(x, p) {
+        if (x % 2 == 0) {
+            return determinePow2(x / 2, p*2);
+        }
+        else {
+            return p;
+        }
+    }
+
+    const pow2 = determinePow2(x, 1);
+    const multiple = x / pow2;
+
+    if (multiple % 1 != 0) throw ("something is wrong");
+
+    return pow2 * (multiple + 1);
+}
+
 function multiBarNoteToABC(note, barLength) {
-    function splitNoteToBarsRec(tick, remainingDuration, splitNotesArray) {            
-        const maxDuration = barLength - (tick % barLength);
+    function splitNoteRec(tick, remainingDuration, str) {            
+        const tickInBar = tick % barLength;
+        const ticksToBarEnd = barLength - tickInBar;
+        const ticksToNextFullTick = nextPow2Multiple(tickInBar) - tickInBar;
+        const undottedDuration = Math.pow(2, Math.floor(Math.log2(Math.min(remainingDuration, ticksToBarEnd))));
+
+        const maxDuration = note.isRest ? Math.min(ticksToBarEnd, undottedDuration)
+            : Math.min(ticksToBarEnd, ticksToNextFullTick);
+
+        if (maxDuration <= 0) {
+            console.error(tickInBar + " " + ticksToNextFullTick);
+            throw "this will break";
+        }
+
+        const thereWillBeMoreNotes = remainingDuration > maxDuration
 
         const newNote = { ...note, tick: tick, duration: Math.min(maxDuration, remainingDuration) };
-        const newArray = [...splitNotesArray, { ...newNote }];
+        const tie = thereWillBeMoreNotes ? (note.isRest?" ":"-") : "";
+        const barEnd = ((newNote.tick + newNote.duration) % barLength) == 0 ? "|" : "";
+        const newString = str + noteToABC(newNote) + tie + barEnd;
 
-        if (remainingDuration > maxDuration) {
-            return splitNoteToBarsRec(tick + maxDuration, remainingDuration - maxDuration, newArray);
+        if (thereWillBeMoreNotes) {
+            return splitNoteRec(tick + maxDuration, remainingDuration - maxDuration, newString);
         }
         
-        return newArray;
+        return newString;
     }
 
-    const notes = splitNoteToBarsRec(note.tick, note.duration, []);
-    const barEnd = ((note.tick + note.duration) % barLength) == 0 ? "|":"";
-    const noteString = notes.map(noteToABC).join("|")
-
-    if (notes.length > 1 && !note.isRest) {
-        return "(" + noteString + ")" + barEnd;
-    }
-
-    return noteString + barEnd;
+    return splitNoteRec(note.tick, note.duration, "");
 }
 
 function notesToAbc(notes, barLength) {
-    const str = hideRepeatedAccidentals(notes, barLength).map(note => multiBarNoteToABC(note, barLength)).join(" ");
+    const str = beautifyRests(hideRepeatedAccidentals(notes, barLength), barLength).map(note => multiBarNoteToABC(note, barLength)).join(" ");
     return str;
 }
 
@@ -270,19 +329,20 @@ const waveRhythm2 = [
 // load constants
 const song_length = document.getElementById('input_length').value
 const tempo = document.getElementById('input_tempo').value
-const barLength = 8;
-const rhythmicUnit = 8;
+const barLength = 16;
+const rhythmicUnit = 16;
 
 // generate matrix
 const matrix = generateMatrix();
 
 // render row
 const row_header = "L:1/4\n";
-const base_row_notes = keysToNotes(getReihe(matrix), rhythm2);
-ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes, 5));
+const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
+ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes, 4));
+
 
 // render song
-const voices = compose(matrix, [schoenbergOp33aPatterns, slow_rhythm], song_length);
+const voices = compose(matrix, [schoenbergOp33aPatterns, schoenbergOp33aPatterns], song_length);
 const abc =
 `X:1
 L:1/${rhythmicUnit}
