@@ -326,29 +326,30 @@ const waveRhythm2 = [
 ]
 
 
-// load constants
-const song_length = document.getElementById("input_length").value
-const tempo = document.getElementById("input_tempo").value
-const barLength = document.getElementById("input_barLength").value;
-const rhythmicUnit = document.getElementById("input_rhythmicUnit").value;
+function generateSong() {
+    // load constants
+    const song_length = document.getElementById("input_length").value
+    const tempo = document.getElementById("input_tempo").value
+    const barLength = document.getElementById("input_barLength").value;
+    const rhythmicUnit = document.getElementById("input_rhythmicUnit").value;
 
-// load rhythms
-const textToRhythmArray = (text) => text.split("\n").map((line) => line.split(" ").map(str => parseInt(str)).filter((x) => isFinite(x))).filter((pattern) => pattern.length > 0);
-const voice1rhythms = textToRhythmArray(document.getElementById("input_rhythm1").value);
-const voice2rhythms = textToRhythmArray(document.getElementById("input_rhythm2").value);
+    // load rhythms
+    const textToRhythmArray = (text) => text.split("\n").map((line) => line.split(" ").map(str => parseInt(str)).filter((x) => isFinite(x))).filter((pattern) => pattern.length > 0);
+    const voice1rhythms = textToRhythmArray(document.getElementById("input_rhythm1").value);
+    const voice2rhythms = textToRhythmArray(document.getElementById("input_rhythm2").value);
 
-// generate matrix
-const matrix = generateMatrix();
+    // generate matrix
+    const matrix = generateMatrix();
 
-// render row
-const row_header = "L:1/4\n";
-const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
-ABCJS.renderAbc('row_container', row_header+notesToAbc(base_row_notes, 4));
+    // render row
+    const row_header = "L:1/4\n";
+    const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
+    ABCJS.renderAbc('row_container', row_header + notesToAbc(base_row_notes, 4));
 
 
-// render song
-const voices = compose(matrix, [voice1rhythms, voice2rhythms], song_length);
-const abc =
+    // render song
+    const voices = compose(matrix, [voice1rhythms, voice2rhythms], song_length);
+    const abc =
 `X:1
 L:1/${rhythmicUnit}
 Q:${tempo}
@@ -357,14 +358,19 @@ ${notesToAbc(voices[0], barLength)}
 V:2 clef=bass
 ${notesToAbc(voices[1], barLength)}`
 
-console.log(abc);
+    console.log(abc);
 
-ABCJS.renderAbc('sheet_container', abc, {scrollHorizontal: false, viewportHorizontal: false});
-ABCJS.renderMidi("midi_player", abc, { generateInline: true });
+    ABCJS.renderAbc('sheet_container', abc, { scrollHorizontal: false, viewportHorizontal: false });
+    ABCJS.renderMidi("midi_player", abc, { generateInline: true });
 
-// print abc output
-document.getElementById("abc_output").textContent = abc;
+    // print abc output
+    document.getElementById("abc_output").textContent = abc;
 
-// hack to get scrolling working correctly
-document.getElementById("row_container").setAttribute("style", "overflow: auto");
-document.getElementById("sheet_container").setAttribute("style", "overflow: auto");
+    // hack to get scrolling working correctly
+    document.getElementById("row_container").setAttribute("style", "overflow: auto");
+    document.getElementById("sheet_container").setAttribute("style", "overflow: auto");
+}
+
+generateSong();
+
+document.getElementById("button_generate").addEventListener("click", () => generateSong());
