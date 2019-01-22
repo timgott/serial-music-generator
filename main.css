@@ -92,18 +92,6 @@
     margin: 0px 10px;
 }
 
-@media screen and (max-width: 60em) {
-    .rhythms {
-        display: none;
-    }
-}
-
-@media screen and (max-width: 40em), screen and (max-height: 20em) {
-    .params {
-        display: none;
-    }
-}
-
 .input_rhythm {
     margin: 10px 0px;
     flex: 1;
@@ -115,4 +103,17 @@ body {
 
 #abc_output {
     white-space: pre-wrap;
+}
+
+/* smaller screen size adaption */
+@media screen and (max-width: 60em) {
+    .rhythms {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 40em), screen and (max-height: 20em) {
+    .params {
+        display: none;
+    }
 }
