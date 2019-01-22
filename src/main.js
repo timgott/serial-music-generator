@@ -371,6 +371,7 @@ function generateSong() {
     const tempo = document.getElementById("input_tempo").value
     const barLength = document.getElementById("input_barLength").value;
     const rhythmicUnit = document.getElementById("input_rhythmicUnit").value;
+    const dissonance = document.getElementById("input_consonance").value;
 
     // load rhythms
     const textToRhythmArray = (text) => text.split("\n").map((line) => line.split(" ").map(str => parseInt(str)).filter((x) => isFinite(x))).filter((pattern) => pattern.length > 0);
@@ -379,7 +380,7 @@ function generateSong() {
 
     // generate matrix
     //const matrix = generateMatrix();
-    const matrix = selectFittestMatrix(100, (m) => getDissonanceScore(m));
+    const matrix = selectFittestMatrix(Math.abs(dissonance), (m) => Math.sign(dissonance) * getDissonanceScore(m));
 
     // render row
     const row_header = "L:1/4\n";
