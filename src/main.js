@@ -73,10 +73,10 @@ function getRandomRow(matrix) {
     return chance(0.5) ? row : krebs(row);
 }
 
-function getDissonanceScore(row) {
+function getDissonanceScore(matrix) {
     //                      1  2- 2+ 3- 3+ 4  4^(TT)
-    const intervalScores = [0, 6, 3, 2, 1, 0, 10]
-
+    const intervalScores = [0, 10, 5, 2, 1, -10, 15]
+    const row = getReihe(matrix);
     return row.reduce((lastScore, note, currentIndex) => {
         if (currentIndex == 0) {
             return 0;
@@ -86,6 +86,19 @@ function getDissonanceScore(row) {
             return lastScore + ((interval <= 6) ? intervalScores[interval] : intervalScores[12 - interval]);
         }
     }, 0);
+}
+
+function selectFittestMatrix(iterations, fitnessFunction, lastMatrix, lastFitness) {
+    const matrix = generateMatrix();
+    const fitness = fitnessFunction(matrix);
+
+    const [newBest, newFitness] = (!lastMatrix) || (fitness > lastFitness) ? [matrix, fitness] : [lastMatrix, lastFitness];
+
+    if (iterations > 1) {
+        return selectFittestMatrix(iterations - 1, fitnessFunction, newBest, newFitness);
+    }
+
+    return newBest;
 }
 
 function repeatNotesPass(sourceRow) {
@@ -349,7 +362,7 @@ const waveRhythm = [
 ];
 const waveRhythm2 = [
     [1,2,3,4,5,4,3,2]
-]
+];
 
 
 function generateSong() {
@@ -365,7 +378,8 @@ function generateSong() {
     const voice2rhythms = textToRhythmArray(document.getElementById("input_rhythm2").value);
 
     // generate matrix
-    const matrix = generateMatrix();
+    //const matrix = generateMatrix();
+    const matrix = selectFittestMatrix(100, (m) => getDissonanceScore(m));
 
     // render row
     const row_header = "L:1/4\n";
@@ -373,7 +387,7 @@ function generateSong() {
     ABCJS.renderAbc('row_container', row_header + notesToAbc(base_row_notes, 4));
 
     // show dissonance score
-    document.getElementById("dissonance_score").textContent = getDissonanceScore(getReihe(matrix));
+    document.getElementById("dissonance_score").textContent = getDissonanceScore(matrix);
 
     // render song
     const voices = compose(matrix, [voice1rhythms, voice2rhythms], song_length);
