@@ -110,5 +110,9 @@
 }
 
 body {
-    margin-bottom: 10em;
+    margin-bottom: 15em;
+}
+
+#abc_output {
+    white-space: pre-wrap;
 }
