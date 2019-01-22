@@ -225,7 +225,7 @@ function beautifyRests(notes, barLength) {
     }, { newNotes: [], currentRestDuration: 0 }).newNotes;
 
     const lastNote = newNotes[newNotes.length - 1];
-    const lastTick = lastNote.tick + lastNote.duration;
+    const lastTick = lastNote ? lastNote.tick + lastNote.duration : 0;
     const remainingDuration = barLength - lastTick % barLength;
 
     if (remainingDuration == barLength)
