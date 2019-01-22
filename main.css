@@ -43,20 +43,14 @@
     text-transform: uppercase;
     background-color: rgb(177, 18, 177);
     color: white;
-    border-color: rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     border-width: 0px;
-    border-style: dotted;
     filter: drop-shadow(0px 0px 5px darkviolet);
     -moz-appearance: none;
 }
 
-button::-moz-focus-inner {
-    border: 0;
-}
-
-.generate_container button:focus {
-    border-width: 1px;
+.generate_container button::-moz-focus-inner {
+    padding: 5px;
 }
 
 .generate_container button:hover {
