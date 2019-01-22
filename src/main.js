@@ -264,9 +264,9 @@ function multiBarNoteToABC(note, barLength) {
         const ticksToBarEnd = barLength - tickInBar;
         const ticksToNextFullTick = nextPow2Multiple(tickInBar) - tickInBar;
         const undottedDuration = Math.pow(2, Math.floor(Math.log2(Math.min(remainingDuration, ticksToBarEnd))));
-
+        const dottedDuration = Math.pow(2, Math.floor(Math.log2(Math.min(remainingDuration * 2.0/3.0, ticksToBarEnd)))) * 3.0/2.0;
         const maxDuration = note.isRest ? Math.min(ticksToBarEnd, undottedDuration)
-            : Math.min(ticksToBarEnd, ticksToNextFullTick);
+            : Math.min(ticksToBarEnd, ticksToNextFullTick, Math.max(dottedDuration%1 === 0 ? dottedDuration : 0, undottedDuration));
 
         if (maxDuration <= 0) {
             console.error(tickInBar + " " + ticksToNextFullTick);
