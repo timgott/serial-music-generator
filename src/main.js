@@ -397,6 +397,7 @@ function generateSong() {
 L:1/${rhythmicUnit}
 Q:${tempo}
 %%staves {1 2}
+K:C
 V:1 clef=treble
 ${notesToAbc(voices[0], barLength)}
 V:2 clef=bass
