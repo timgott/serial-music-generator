@@ -73,6 +73,21 @@ function getRandomRow(matrix) {
     return chance(0.5) ? row : krebs(row);
 }
 
+function getDissonanceScore(row) {
+    //                      1  2- 2+ 3- 3+ 4  4^(TT)
+    const intervalScores = [0, 6, 3, 2, 1, 0, 10]
+
+    return row.reduce((lastScore, note, currentIndex) => {
+        if (currentIndex == 0) {
+            return 0;
+        }
+        else {
+            const interval = Math.abs(note - row[currentIndex - 1]) % 12;
+            return lastScore + ((interval <= 6) ? intervalScores[interval] : intervalScores[12 - interval]);
+        }
+    }, 0);
+}
+
 function repeatNotesPass(sourceRow) {
     function addNotes(row, i) {
         if (i >= sourceRow.length)
@@ -357,6 +372,8 @@ function generateSong() {
     const base_row_notes = keysToNotes(getReihe(matrix), static_rhythm);
     ABCJS.renderAbc('row_container', row_header + notesToAbc(base_row_notes, 4));
 
+    // show dissonance score
+    document.getElementById("dissonance_score").textContent = getDissonanceScore(getReihe(matrix));
 
     // render song
     const voices = compose(matrix, [voice1rhythms, voice2rhythms], song_length);
