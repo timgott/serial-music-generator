@@ -148,13 +148,24 @@ function shiftOctaves(notes, octaves) {
 }
 
 function compose(matrix, patternsPerVoice, minLength) {
-    const voices = patternsPerVoice.map(function (patterns, i) {
+    const rawVoices = patternsPerVoice.map(function (patterns, i) {
         const startRow = i == 0 ? getReihe(matrix) : [];
         const melodyKeys = fillRowToLength(minLength, matrix, startRow);
-        return shiftOctaves(keysToNotes(melodyKeys, patterns), -i*2);
+        return shiftOctaves(keysToNotes(melodyKeys, patterns), -i * 2);
+    });
+    
+    const minDuration = rawVoices.reduce((lastMin, voice) => {
+        const lastNote = voice[voice.length - 1];
+        return Math.min(lastMin, lastNote.tick + lastNote.duration);
+    }, Infinity);
+    
+    const cutVoices = rawVoices.map(voice => {
+        const cutoffIndex = voice.findIndex(note => note.tick > minDuration);
+        console.log(cutoffIndex);
+        return cutoffIndex > 0 ? voice.slice(0, cutoffIndex) : voice;
     })
     
-    return voices;
+    return cutVoices;
 }
 
 function noteStringToOctave(noteString, octave) {
